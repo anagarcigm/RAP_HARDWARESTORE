@@ -1,0 +1,80 @@
+@Metadata.layer: #CUSTOMER
+//@Search.searchable: true
+annotate entity ZC_ORDERSHOP
+    with 
+{  @UI.facet: [
+           
+          {
+                  id: 'Root_entity',
+                  type: #COLLECTION,
+                  position: 10,
+                  label: 'Hardware Store - Pedidos'
+                  } ,
+                  {
+                  type: #LINEITEM_REFERENCE,
+                  position: 20,
+                  parentId: 'Root_entity',
+                  isSummary: true,
+                  isPartOfPreview: true
+                  }
+         
+         ]
+   
+    
+  @EndUserText.label: 'N. Pedido'
+  @UI.selectionField: [{position: 10}]
+  @UI.lineItem: [{position:10 , label: 'Ped.', importance:#HIGH }]  
+  @UI.identification: [{ position:10, label: 'Pedido' }]
+  id;
+    
+  @EndUserText.label: 'Total (sin dto)'
+  @UI.lineItem: [{position:20 , label: 'Pvp Total (sin dto)'}]  
+  @UI.identification: [{ position:20, label: 'Pvp Total (sin dto)' }]
+  totalprice;
+  
+  @EndUserText.label: 'Codigo Cupon'
+  @UI.lineItem: [{position:30 , label: 'Código Cupon'}]  
+  @UI.identification: [{ position:30, label: 'Cupon' }]
+/* @Consumption.valueHelpDefinition: [{ entity : {name: 'ZCAD_CUPON', element: 'CODE'  } }] */
+  cupon;
+//  @Search.defaultSearchElement: true
+//  percentaje;
+  
+  @EndUserText.label: 'Precio total con descuento'
+  @UI.lineItem: [{position:40 , label: 'Precio total con descuento'}]  
+  @UI.identification: [{ position:40, label: 'Precio total con descuento' }]
+  discountedprice;
+  
+//  @UI.lineItem: [{position:50 , label: 'F. Entrega'}]  
+//   @UI.identification: [{ position:50, label: 'Fecha Entrega' }]
+//    @EndUserText.label: 'F. Entrega' 
+// @Search.defaultSearchElement: true
+//  deliveratedate;
+    
+  @EndUserText.label: 'Pernos'
+  @UI.lineItem: [{position:70 , label: 'Pernos'}]  
+  @UI.identification: [{ position:70, label: 'Pernos' }]
+  bolts;
+  
+    @EndUserText.label: 'Tornillos'
+  @UI.lineItem: [{position:80 , label: 'Tornillos'}]  
+  @UI.identification: [{ position:80, label: 'Tornillos' }]
+  screw;
+  
+    @EndUserText.label: 'Tuercas'
+  @UI.lineItem: [{position:90 , label: 'Tuercas'}]  
+  @UI.identification: [{ position:90, label: 'Tuercas' }]
+  nuts;
+  
+      @EndUserText.label: 'Arandelas'
+  @UI.lineItem: [{position:100 , label: 'Arandelas'}]  
+  @UI.identification: [{ position:100, label: 'Arandelas' }]
+  washers;
+  
+
+
+  
+  
+  
+    
+}
