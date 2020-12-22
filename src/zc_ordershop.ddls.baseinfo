@@ -3,11 +3,12 @@
 {
 "FROM":
 [
+"ZI_CUPON",
 "ZI_ORDERSHOP"
 ],
 "ASSOCIATED":
 [
-"ZCAD_CUPON"
+"ZI_CUPON"
 ],
 "BASE":
 [

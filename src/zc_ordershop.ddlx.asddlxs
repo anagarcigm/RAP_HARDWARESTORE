@@ -27,52 +27,42 @@ annotate entity ZC_ORDERSHOP
   @UI.identification: [{ position:10, label: 'Pedido' }]
   id;
     
-  @EndUserText.label: 'Total (sin dto)'
-  @UI.lineItem: [{position:20 , label: 'Pvp Total (sin dto)'}]  
-  @UI.identification: [{ position:20, label: 'Pvp Total (sin dto)' }]
-  totalprice;
-  
-  @EndUserText.label: 'Codigo Cupon'
-  @UI.lineItem: [{position:30 , label: 'Código Cupon'}]  
-  @UI.identification: [{ position:30, label: 'Cupon' }]
-/* @Consumption.valueHelpDefinition: [{ entity : {name: 'ZCAD_CUPON', element: 'CODE'  } }] */
-  cupon;
-//  @Search.defaultSearchElement: true
-//  percentaje;
-  
-  @EndUserText.label: 'Precio total con descuento'
-  @UI.lineItem: [{position:40 , label: 'Precio total con descuento'}]  
-  @UI.identification: [{ position:40, label: 'Precio total con descuento' }]
-  discountedprice;
-  
-//  @UI.lineItem: [{position:50 , label: 'F. Entrega'}]  
-//   @UI.identification: [{ position:50, label: 'Fecha Entrega' }]
-//    @EndUserText.label: 'F. Entrega' 
-// @Search.defaultSearchElement: true
-//  deliveratedate;
     
+  @EndUserText.label: 'Codigo Cupon'
+  @UI.lineItem: [{position:30 , label: 'Cupon'}]  
+  @UI.identification: [{ position:30, label: 'Cupon' }]
+  cupon;
+  
+  
   @EndUserText.label: 'Pernos'
-  @UI.lineItem: [{position:70 , label: 'Pernos'}]  
+  @UI.lineItem: [{position:60 , label: 'Pernos'}]  
   @UI.identification: [{ position:70, label: 'Pernos' }]
   bolts;
   
     @EndUserText.label: 'Tornillos'
-  @UI.lineItem: [{position:80 , label: 'Tornillos'}]  
+  @UI.lineItem: [{position:60 , label: 'Tornillos'}]  
   @UI.identification: [{ position:80, label: 'Tornillos' }]
   screw;
   
     @EndUserText.label: 'Tuercas'
-  @UI.lineItem: [{position:90 , label: 'Tuercas'}]  
-  @UI.identification: [{ position:90, label: 'Tuercas' }]
+  @UI.lineItem: [{position:70 , label: 'Tuercas'}]  
+  @UI.identification: [{ position:70, label: 'Tuercas' }]
   nuts;
   
       @EndUserText.label: 'Arandelas'
-  @UI.lineItem: [{position:100 , label: 'Arandelas'}]  
-  @UI.identification: [{ position:100, label: 'Arandelas' }]
+  @UI.lineItem: [{position:80 , label: 'Arandelas'}]  
+  @UI.identification: [{ position:80, label: 'Arandelas' }]
   washers;
+  @EndUserText.label: 'Total (sin dto)'
+  @UI.lineItem: [{position:110 , label: 'Pvp Total (sin dto)'}]  
+  @UI.identification: [{ position:110, label: 'Pvp Total (sin dto)' }]
+  totalprice;
   
-
-
+    @EndUserText.label: 'Precio total con descuento'
+  @UI.lineItem: [{position:120 , label: 'Precio total con descuento'}]  
+  @UI.identification: [{ position:120, label: 'Precio total con descuento' }]
+  discountedprice;
+ 
   
   
   

@@ -20,7 +20,7 @@ CLASS ZCL_VIRTUAL_FIELDS IMPLEMENTATION.
 
     DATA ls_data TYPE STANDARD TABLE OF zc_ordershop.
 
-    BREAK-POINT.
+
     ls_data = CORRESPONDING #( it_original_data ).
     LOOP AT ls_data ASSIGNING FIELD-SYMBOL(<fs_data>).
       <fs_data>-deliveratedate = sy-datum + 7.
@@ -34,11 +34,11 @@ CLASS ZCL_VIRTUAL_FIELDS IMPLEMENTATION.
 
   method IF_SADL_EXIT_CALC_ELEMENT_READ~GET_CALCULATION_INFO.
 
-    IF line_exists( it_requested_calc_elements[ table_line = 'DELIVERATEDATE' ] ).
+*   IF line_exists( it_requested_calc_elements[ table_line = 'DELIVERATEDATE' ] ).
 *       APPEND 'WASHERS' TO et_requested_orig_elements.
-         APPEND 'BOLTS' TO et_requested_orig_elements.
+*         APPEND 'BOLTS' TO et_requested_orig_elements.
 *         APPEND 'NUTS' TO et_requested_orig_elements.
-         APPEND 'SCREW' TO et_requested_orig_elements.
-   	ENDIF.
+*         APPEND 'SCREW' TO et_requested_orig_elements.
+*   	ENDIF.
   endmethod.
 ENDCLASS.
