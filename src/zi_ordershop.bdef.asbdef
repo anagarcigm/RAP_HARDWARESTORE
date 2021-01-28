@@ -2,22 +2,22 @@ managed; // implementation in class zbp_i_ordershop unique;
 
 define behavior for ZI_ORDERSHOP alias ordersh
 implementation in class zbp_i_ordershop unique
-with unmanaged save
-//persistent table zcad_ordershop
+with additional save
+persistent table zcad_ordershop
 lock master
 //authorization master ( instance )
 //etag master <field_name>
 {
-  field ( readonly ) id, totalprice, discountedprice;
-//  field (features : instance ) id;
-
+   field ( read only, numbering : managed ) order_uuid;
+   field ( readonly ) id;
+  field ( features : instance )  bolts, screw, washers, nuts;
   create;
-  update;
   delete;
-
-
+  update;
+//  internal action reCalcTotalPrice;
   mapping for zcad_ordershop
-  {  id  = id;
+  {  order_uuid = order_uuid;
+      id  = id;
       bolts = bolts;
     screw = screw;
     nuts = nuts;
@@ -29,5 +29,9 @@ lock master
   }
 
 
-  validation validatecupon on save { create; field cupon; }
+  validation validatecupon on save { create; update; field cupon; }
+  validation validatestock on save { create; field nuts, bolts, washers, screw; }
+  determination calculateTotal on modify { field cupon, bolts, washers, nuts, screw; }
+  determination set_id on save { create; }
+
 }

@@ -5,7 +5,8 @@
 
 define root view entity ZC_ORDERSHOP as projection on ZI_ORDERSHOP {
     //ZI_ORDERSHOP
-    key id as id,
+     key order_uuid as order_uuid,
+     id as id,
      @ObjectModel.text.element: ['percentaje']
      cupon as cupon,
       _zi_cupon.percentaje as percentaje, 

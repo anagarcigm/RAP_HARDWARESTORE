@@ -1,25 +1,49 @@
 CLASS lhc_ZI_ORDERSHOP DEFINITION INHERITING FROM cl_abap_behavior_handler.
   PRIVATE SECTION.
-*      DATA: lt_fields       TYPE TABLE OF dfies.
+    CONSTANTS:
+      lc_nuts    TYPE ze_idproduct VALUE'NUTS_01',
+      lc_screws  TYPE ze_idproduct VALUE'SCREW_01',
+      lc_washers TYPE ze_idproduct VALUE'WASHER_01',
+      lc_bolts   TYPE ze_idproduct VALUE'BOLTS_01'.
 
-*    METHODS create FOR MODIFY
-*      IMPORTING entities FOR CREATE order.
-*
-*    METHODS delete FOR MODIFY
-*      IMPORTING keys FOR DELETE order.
-*
-*    METHODS update FOR MODIFY
-*      IMPORTING entities FOR UPDATE order.
-*
-*    METHODS read FOR READ
-*      IMPORTING keys FOR READ order RESULT result.
-
-*     METHODS get_features  FOR FEATURES IMPORTING keys REQUEST requested_features FOR ordersh    RESULT result.
-     METHODS validate_cupon FOR VALIDATE ON SAVE IMPORTING keys for ordersh~validatecupon.
+    METHODS get_features  FOR FEATURES IMPORTING keys REQUEST requested_features FOR ordersh    RESULT result.
+    METHODS validate_cupon FOR VALIDATE ON SAVE IMPORTING keys FOR ordersh~validatecupon.
+    METHODS validatestock  FOR VALIDATE ON SAVE IMPORTING keys FOR ordersh~validatestock.
+    METHODS calculatetotal FOR DETERMINE ON MODIFY IMPORTING keys FOR ordersh~calculateTotal.
+    METHODS setid FOR DETERMINE ON SAVE IMPORTING keys FOR ordersh~set_id.
 ENDCLASS.
 
 CLASS lhc_ZI_ORDERSHOP IMPLEMENTATION.
-   method validate_cupon.
+
+ method setid.
+
+  READ ENTITIES OF zi_ordershop IN LOCAL MODE
+      ENTITY ordersh
+        FIELDS ( ID )
+        WITH CORRESPONDING #( keys )
+      RESULT DATA(lt_data).
+
+    DELETE lt_data WHERE ID IS NOT INITIAL.
+    CHECK lt_data IS NOT INITIAL.
+
+    "Get max travelID
+    SELECT SINGLE FROM zcad_ordershop FIELDS MAX( id ) INTO @DATA(lv_max_id).
+
+    add 1 to lv_max_id.
+    Lv_max_id = |{ LV_MAX_ID ALPHA = IN }|  .
+     "update involved instances
+    MODIFY ENTITIES OF zi_ordershop IN LOCAL MODE
+      ENTITY ordersh
+        UPDATE FIELDS ( id )
+        WITH VALUE #( FOR ls_data IN lt_data  (
+                           %tky      = ls_data-%tky
+                           ID  = lv_max_id ) )
+    REPORTED DATA(lt_reported).
+
+    "fill reported
+    reported = CORRESPONDING #( DEEP lt_reported ).
+ ENDMETHOD.
+  METHOD validate_cupon.
 
     READ ENTITIES OF zi_ordershop IN LOCAL MODE
     ENTITY ordersh
@@ -28,22 +52,22 @@ CLASS lhc_ZI_ORDERSHOP IMPLEMENTATION.
     RESULT DATA(lt_result).
 
 * transformar upper case
-   lt_result = VALUE #( LET lt_temp = lt_result IN FOR ls_temp IN lt_temp
-                    ( cupon = to_upper( ls_temp-cupon ) ) ).
+*   lt_result = VALUE #( LET lt_temp = lt_result IN FOR ls_temp IN lt_temp
+*                    ( cupon = to_upper( ls_temp-cupon ) ) ).
 
-      SELECT FROM zcad_cupon FIELDS code
-      FOR ALL ENTRIES IN @lt_result
-      WHERE code =  @lt_result-cupon
-      INTO TABLE @DATA(lt_result_db).
-
-
-
-        LOOP AT lt_result INTO DATA(ls_result).
-        IF ls_result-cupon IS NOT INITIAL AND NOT line_exists( lt_result_db[ code = ls_result-cupon ] ).
-         APPEND VALUE #( id   = ls_result-id ) TO failed-ordersh.
+    SELECT FROM zcad_cupon FIELDS code
+    FOR ALL ENTRIES IN @lt_result
+    WHERE code =  @lt_result-cupon
+    INTO TABLE @DATA(lt_result_db).
 
 
-        APPEND VALUE #(  id   = ls_result-id
+
+    LOOP AT lt_result INTO DATA(ls_result).
+      IF ls_result-cupon IS NOT INITIAL AND NOT line_exists( lt_result_db[ code = ls_result-cupon ] ).
+        APPEND VALUE #( order_uuid   = ls_result-order_uuid ) TO failed-ordersh.
+
+
+        APPEND VALUE #(  order_uuid   = ls_result-order_uuid
                          %msg      = new_message( id       = 'ZCAD'
                                                   number   = '001'
                                                   v1       = ls_result-cupon
@@ -53,147 +77,377 @@ CLASS lhc_ZI_ORDERSHOP IMPLEMENTATION.
 
     ENDLOOP.
 
-   ENDMETHOD.
-*    METHOD get_features.
+  ENDMETHOD.
 *
-*    READ ENTITIES OF zi_ordershop IN LOCAL MODE
-*      ENTITY ordersh
-*         FIELDS (  id )
-*          WITH VALUE #( FOR keyval IN keys ( %key = keyval-%key ) )
-*       RESULT DATA(lt_order_result).
-*
-*
-*     result = VALUE #( FOR ls_order IN lt_order_result
-*                       ( %key                           = ls_order-%key
-*                         %field-id               = if_abap_behv=>fc-f-read_only ) ).
-*     ENDMETHOD.
-*
-*  METHOD create.
-*
-*     DATA: LS_ORDER TYPE ZCAD_ORDERSHOP.
-*
-*
-*    loop at entities ASSIGNING FIELD-SYMBOL(<FS_ORDER>).
-*        LS_ORDER = CORRESPONDING #( <FS_ORDER> ).
-*       INSERT  ZCAD_ORDERSHOP FROM LS_ORDER.
-*     endloop.
-*  ENDMETHOD.
-*
-*  METHOD delete.
-*
-*
-*     DATA: LS_ORDER TYPE ZCAD_ORDERSHOP.
-*
-*   loop at keys ASSIGNING FIELD-SYMBOL(<FS_ORDER>).
-*
-*      LS_ORDER = CORRESPONDING #( <FS_ORDER> ).
-*      DELETE FROM ZCAD_ORDERSHOP WHERE ID = LS_ORDER-ID.
-*
-*   ENDLOOP.
-*
-*  ENDMETHOD.
-*
-*  METHOD update.
-*   if entities is not INITIAL.
-*
-*    call FUNCTION 'DDIF_FIELDINFO_GET'
-*    EXPORTING
-*      TABNAME = 'ZCAD_ORDERSHOP'
-*    TABLES
-*      dfies_tab      = lt_fields
-*    EXCEPTIONS
-*       not_found      = 1
-*       internal_error = 2
-*       OTHERS         = 3.
-*
-*    DATA(ls_data) = entities[ 1 ].
-*
-*    SELECT SINGLE *
-*    FROM ZCAD_ORDERSHOP
-*    INTO @DATA(ls_tmp_tabl)
-*    WHERE ID = @ls_data-ID.
-*
-*    LOOP AT lt_fields ASSIGNING FIELD-SYMBOL(<fs_field>).
-*      ASSIGN COMPONENT <fs_field>-fieldname OF STRUCTURE ls_data TO FIELD-SYMBOL(<fs_target>).
-*
-*      IF <fs_target> IS ASSIGNED AND <fs_target> IS NOT INITIAL.
-*
-*       ASSIGN COMPONENT <fs_field>-fieldname OF STRUCTURE ls_tmp_tabl
-*       TO FIELD-SYMBOL(<fs_source>).
-*
-*        <fs_source> = <fs_target>.
-*
-*     ENDIF.
-*
-*    ENDLOOP.
-*    UPDATE ZCAD_ORDERSHOP FROM LS_TMP_TABL.
-*
-*    endif.
-*
-*  ENDMETHOD.
-*
-*  METHOD read.
-*
-*
-*     DATA: LS_OUT TYPE ZCAD_ORDERSHOP.
-*
-*
-*   loop at keys INTO DATA(LS_ORDER).
-*     SELECT SINGLE * INTO LS_OUT
-*     FROM ZCAD_ORDERSHOP
-*     WHERE ID = LS_ORDER-ID.
-*
-*
-*    INSERT CORRESPONDING #( ls_out ) INTO TABLE RESULT.
-*
-*   ENDLOOP.
-*
-*  ENDMETHOD.
+  METHOD validatestock.
+    DATA: lv_return LIKE sy-subrc.
 
+    READ ENTITIES OF zi_ordershop IN LOCAL MODE
+          ENTITY ordersh
+          ALL FIELDS WITH
+          CORRESPONDING #( keys )
+          RESULT   DATA(lt_read_data).
+
+    LOOP AT lt_read_data ASSIGNING FIELD-SYMBOL(<fs_read_data>).
+      IF <fs_read_data>-nuts IS NOT INITIAL.
+
+        CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+          EXPORTING
+            numero_piezas = <fs_read_data>-nuts
+            product       = lc_nuts
+          IMPORTING
+            control_stock = lv_return.
+
+         if lv_return = '4'.
+          APPEND VALUE #( order_uuid   = <fs_read_data>-order_uuid ) TO failed-ordersh.
+
+
+          APPEND VALUE #(  order_uuid   = <fs_read_data>-order_uuid
+                         %msg      = new_message( id       = 'ZCAD'
+                                                  number   = '002'
+                                                  v1       = lc_nuts
+                                                  severity = if_abap_behv_message=>severity-error )
+                         %element-nuts = if_abap_behv=>mk-on ) TO reported-ordersh.
+         endif.
+      ENDIF.
+
+      IF <fs_read_data>-washers IS NOT INITIAL.
+        CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+          EXPORTING
+            numero_piezas = <fs_read_data>-washers
+            product       = lc_washers
+          IMPORTING
+            control_stock = lv_return.
+             if lv_return = '4'.
+          APPEND VALUE #( order_uuid  = <fs_read_data>-order_uuid ) TO failed-ordersh.
+
+
+          APPEND VALUE #(  order_uuid   = <fs_read_data>-order_uuid
+                         %msg      = new_message( id       = 'ZCAD'
+                                                  number   = '002'
+                                                  v1       = lc_washers
+                                                  severity = if_abap_behv_message=>severity-error )
+                         %element-washers = if_abap_behv=>mk-on ) TO reported-ordersh.
+         endif.
+      ENDIF.
+      IF <fs_read_data>-bolts IS NOT INITIAL.
+        CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+          EXPORTING
+            numero_piezas = <fs_read_data>-bolts
+            product       = lc_bolts
+          IMPORTING
+            control_stock = lv_return.
+
+         if lv_return = '4'.
+          APPEND VALUE #( order_uuid   = <fs_read_data>-order_uuid ) TO failed-ordersh.
+
+
+          APPEND VALUE #(  order_uuid  = <fs_read_data>-order_uuid
+                         %msg      = new_message( id       = 'ZCAD'
+                                                  number   = '002'
+                                                  v1       = lc_bolts
+                                                  severity = if_abap_behv_message=>severity-error )
+                         %element-bolts = if_abap_behv=>mk-on ) TO reported-ordersh.
+         endif.
+
+      ENDIF.
+
+      IF <fs_read_data>-screw IS NOT INITIAL.
+        CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+          EXPORTING
+            numero_piezas = <fs_read_data>-screw
+            product       = lc_screws
+          IMPORTING
+            control_stock = lv_return.
+
+       if lv_return = '4'.
+          APPEND VALUE #( order_uuid   = <fs_read_data>-order_uuid ) TO failed-ordersh.
+
+
+          APPEND VALUE #(  order_uuid   = <fs_read_data>-order_uuid
+                         %msg      = new_message( id       = 'ZCAD'
+                                                  number   = '002'
+                                                  v1       = lc_screws
+                                                  severity = if_abap_behv_message=>severity-error )
+                         %element-screw = if_abap_behv=>mk-on ) TO reported-ordersh.
+         endif.
+      ENDIF.
+
+
+    ENDLOOP.
+  ENDMETHOD.
+  METHOD  calculatetotal.
+    DATA: lV_importe TYPE ze_totalp,
+          lv_return  LIKE sy-subrc.
+    DATA: ls_cupon TYPE zcad_cupon.
+
+    IF keys IS NOT INITIAL.
+
+*   Read order instance data
+
+      READ ENTITIES OF zi_ordershop IN LOCAL MODE
+           ENTITY ordersh
+           ALL FIELDS WITH
+           CORRESPONDING #( keys )
+           RESULT   DATA(lt_read_data).
+
+      LOOP AT lt_read_data ASSIGNING FIELD-SYMBOL(<fs_read_data>).
+        CLEAR <fs_read_data>-totalprice.
+        <fs_read_data>-moneda = 'EUR'.
+        IF <fs_read_data>-nuts IS NOT INITIAL.
+
+          CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+            EXPORTING
+              numero_piezas = <fs_read_data>-nuts
+              product       = lc_nuts
+            IMPORTING
+              precio        = lV_importe
+              control_stock = lv_return.
+
+          <fs_read_data>-totalprice = <fs_read_data>-totalprice + LV_importe.
+        ENDIF.
+
+        IF <fs_read_data>-washers IS NOT INITIAL.
+          CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+            EXPORTING
+              numero_piezas = <fs_read_data>-washers
+              product       = lc_washers
+            IMPORTING
+              precio        = lV_importe
+              control_stock = lv_return.
+
+          <fs_read_data>-totalprice = <fs_read_data>-totalprice + LV_importe.
+        ENDIF.
+        IF <fs_read_data>-bolts IS NOT INITIAL.
+          CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+            EXPORTING
+              numero_piezas = <fs_read_data>-bolts
+              product       = lc_bolts
+            IMPORTING
+              precio        = lV_importe
+              control_stock = lv_return.
+
+          <fs_read_data>-totalprice = <fs_read_data>-totalprice + LV_importe.
+        ENDIF.
+
+        IF <fs_read_data>-screw IS NOT INITIAL.
+          CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+            EXPORTING
+              numero_piezas = <fs_read_data>-screw
+              product       = lc_screws
+            IMPORTING
+              precio        = lV_importe
+              control_stock = lv_return.
+
+          <fs_read_data>-totalprice = <fs_read_data>-totalprice + LV_importe.
+        ENDIF.
+
+        IF <fs_read_data>-cupon IS INITIAL.
+          <fs_read_data>-discountedprice = <fs_read_data>-totalprice.
+        ELSE.
+
+          SELECT SINGLE *
+          FROM zcad_cupon
+          WHERE code  = @<fs_read_data>-cupon
+          INTO @ls_cupon.
+          IF sy-subrc EQ 0.
+            <fs_read_data>-discountedprice = <fs_read_data>-totalprice -
+             (  <fs_read_data>-totalprice * ls_cupon-percentaje ).
+          else.
+           <fs_read_data>-discountedprice = <fs_read_data>-totalprice.
+          ENDIF.
+        ENDIF.
+      ENDLOOP.
+
+      MODIFY ENTITIES OF zi_ordershop IN LOCAL MODE
+         ENTITY ordersh
+        UPDATE FIELDS ( totalprice moneda  discountedprice )
+        WITH CORRESPONDING #(  lt_read_data )
+                REPORTED DATA(lt_reported)
+                FAILED DATA(lt_failed).
+*         UPDATE FIELDS ( tota moneda )
+*          WITH VALUE #( FOR key IN keys ( id  = key-id
+*                                             moneda = 'EUR' ) )
+*                                            failed data(lt_failed).
+
+*       reported = CORRESPONDING #( DEEP lt_reported ).
+
+
+    ENDIF.
+
+  ENDMETHOD.
+  METHOD get_features.
+
+    READ ENTITIES OF zi_ordershop IN LOCAL MODE
+    ENTITY ordersh
+    FIELDS ( bolts washers nuts screw totalprice )
+    WITH CORRESPONDING #( keys )
+    RESULT DATA(lt_data)
+    FAILED DATA(lt_failed).
+
+    result = VALUE #( FOR ls_data IN lt_data
+                       ( %key             = ls_data-%key
+                         %field-bolts     = if_abap_behv=>fc-f-read_only
+                         %field-nuts      =    if_abap_behv=>fc-f-read_only
+                         %field-washers  = if_abap_behv=>fc-f-read_only
+                         %field-screw     =  if_abap_behv=>fc-f-read_only    ) ).
+
+
+  ENDMETHOD.
 
 
 ENDCLASS.
 
 CLASS lcl_save DEFINITION INHERITING FROM cl_abap_behavior_saver.
 
+
   PROTECTED SECTION.
     METHODS save_modified REDEFINITION.
 
+ PRIVATE SECTION.
+    CONSTANTS:
+      lc_nuts    TYPE ze_idproduct VALUE'NUTS_01',
+      lc_screws  TYPE ze_idproduct VALUE'SCREW_01',
+      lc_washers TYPE ze_idproduct VALUE'WASHER_01',
+      lc_bolts   TYPE ze_idproduct VALUE'BOLTS_01'.
 ENDCLASS.
 
 
 CLASS lcl_save IMPLEMENTATION.
 
 
-  METHOD save_modified.
-         DATA lt_data_db TYPE STANDARD TABLE OF zcad_ordershop.
-
+   METHOD save_modified.
+*
+        DATA lt_data_db TYPE STANDARD TABLE OF zcad_ordershop.
+        DATA LV_RETURN LIKE SY-SUBRC.
+        field-symbols  <fs_read_data> type zcad_ordershop.
+*
         IF create-ordersh IS NOT INITIal.
+*
+          lt_data_db = CORRESPONDING #( create-ordersh ).
+*
 
-         lt_data_db = CORRESPONDING #( create-ordersh ).
+          loop at lt_data_db ASSIGNING  <fs_READ_data>.
+**
+           IF <fs_read_data>-nuts IS NOT INITIAL.
 
-          "Get max travelID
-          SELECT SINGLE FROM ZI_ORDERSHOP FIELDS MAX( id ) INTO @DATA(lv_maX).
+          CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+            EXPORTING
+              numero_piezas = <fs_read_data>-nuts
+              product       = lc_nuts
+              save_stock    = abap_true
+            IMPORTING
+              CONTROL_STOCK = lv_return.
 
-          loop at lt_data_db ASSIGNING FIELD-SYMBOL(<fs_data>).
-            add 1 to lv_max.
 
-            <fs_data>-id = lv_max.
-            <fs_data>-id = |{ <fs_data>-id ALPHA = IN }| .
-            <fs_data>-cupon = to_upper( <fs_data>-cupon ).
+        ENDIF.
+
+        IF <fs_read_data>-washers IS NOT INITIAL.
+          CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+            EXPORTING
+              numero_piezas = <fs_read_data>-washers
+              product       = lc_washers
+                save_stock    = abap_true
+            IMPORTING
+              CONTROL_STOCK = lv_return.
+
+
+        ENDIF.
+        IF <fs_read_data>-bolts IS NOT INITIAL.
+          CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+            EXPORTING
+              numero_piezas = <fs_read_data>-bolts
+              product       = lc_bolts
+                save_stock    = abap_true
+            IMPORTING
+               control_stock = lv_return.
+
+
+        ENDIF.
+
+        IF <fs_read_data>-screw IS NOT INITIAL.
+          CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+            EXPORTING
+              numero_piezas = <fs_read_data>-screw
+              product       = lc_screws
+                save_stock    = abap_true
+            IMPORTING
+              control_stock = lv_return.
+
+        ENDIF.
+
+
           endloop.
-          INSERT ZCAD_ORDERSHOP FROM TABLE @LT_DATA_DB.
-
 
         endif.
-
+*
         if delete-ordersh is not  INITIAL.
 
          lt_data_db = CORRESPONDING #( delete-ordersh ).
-         delete zcad_ordershop from table lt_data_db.
+
+         select *
+         from zcad_ordershop
+         FOR ALL ENTRIES IN @lt_data_db
+         where order_uuid = @lt_data_db-order_uuid
+         into table @lt_data_db.
+
+
+
+          LOOP AT lt_data_db ASSIGNING <fs_read_data>.
+**
+            IF <fs_read_data>-nuts IS NOT INITIAL.
+
+              CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+                EXPORTING
+                  numero_piezas = <fs_read_data>-nuts
+                  product       = lc_nuts
+                  delete_order  = abap_true
+                IMPORTING
+                   control_stock  = lv_return.
+
+
+            ENDIF.
+
+            IF <fs_read_data>-washers IS NOT INITIAL.
+              CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+                EXPORTING
+                  numero_piezas = <fs_read_data>-washers
+                  product       = lc_washers
+                  delete_order  = abap_true
+                IMPORTING
+                  control_stock = lv_return.
+
+
+            ENDIF.
+            IF <fs_read_data>-bolts IS NOT INITIAL.
+              CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+                EXPORTING
+                  numero_piezas = <fs_read_data>-bolts
+                  product       = lc_bolts
+                  delete_order  = abap_true
+                IMPORTING
+                  control_stock = lv_return.
+
+
+            ENDIF.
+
+            IF <fs_read_data>-screw IS NOT INITIAL.
+              CALL FUNCTION 'ZCAD_CALCULAR_PVP'
+                EXPORTING
+                  numero_piezas = <fs_read_data>-screw
+                  product       = lc_screws
+                  delete_order  = abap_true
+                IMPORTING
+                  control_stock = lv_return.
+
+            ENDIF.
+
+
+          ENDLOOP.
 
         endif.
-
-
+*
+.
+*
   ENDMETHOD.
 ENDCLASS.

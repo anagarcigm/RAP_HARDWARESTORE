@@ -19,6 +19,12 @@
      <MSGNR>001</MSGNR>
      <TEXT>El valor &amp; no existe</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZCAD</ARBGB>
+     <MSGNR>002</MSGNR>
+     <TEXT>No se dispone de stock suficiente para el producto &amp;</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

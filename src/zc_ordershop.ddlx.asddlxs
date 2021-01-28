@@ -34,14 +34,14 @@ annotate entity ZC_ORDERSHOP
   cupon;
   
   
-  @EndUserText.label: 'Pernos'
-  @UI.lineItem: [{position:60 , label: 'Pernos'}]  
-  @UI.identification: [{ position:70, label: 'Pernos' }]
+  @EndUserText.label: 'Tornillos'
+  @UI.lineItem: [{position:60 , label: 'Tornillos'}]  
+  @UI.identification: [{ position:70, label: 'Tornillos' }]
   bolts;
   
-    @EndUserText.label: 'Tornillos'
-  @UI.lineItem: [{position:60 , label: 'Tornillos'}]  
-  @UI.identification: [{ position:80, label: 'Tornillos' }]
+    @EndUserText.label: 'Pernos'
+  @UI.lineItem: [{position:60 , label: 'Pernos'}]  
+  @UI.identification: [{ position:80, label: 'Pernos' }]
   screw;
   
     @EndUserText.label: 'Tuercas'
